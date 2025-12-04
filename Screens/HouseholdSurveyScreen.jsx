@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+
+// ✅ FIXED HOUSEHOLD SURVEY SCREEN
+import React, { useState, useMemo } from "react";
 import {
-  SafeAreaView,
+  ScrollView,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Modal,
+  Alert,
 } from "react-native";
 import Slider from "@react-native-community/slider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const QUESTIONS = [
   "Are children (6-10 yrs) attending primary school?",
@@ -23,133 +26,223 @@ const QUESTIONS = [
   "Is at least one member part of an SHG / livelihood group?",
 ];
 
-export default function HouseholdSurveyScreen({ navigation }) {
-  const [answers, setAnswers] = useState(QUESTIONS.map(() => ({ yesNo: null, score: null })));
+export default function HouseholdSurveyScreen({ navigation, route }) {
+  const { houseId } = route.params;
+
+  const [answers, setAnswers] = useState(
+    QUESTIONS.map(() => ({ yesNo: null, score: null }))
+  );
+
   const [modalVisible, setModalVisible] = useState(false);
   const [activeQ, setActiveQ] = useState(null);
   const [tempScore, setTempScore] = useState(5);
-  const [isSubmitted, setIsSubmitted] = useState(false); // NEW
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function setYesNo(index, value) {
-    const copy = [...answers];
-    copy[index] = { ...copy[index], yesNo: value };
-    setAnswers(copy);
-  }
+  // ✅ FIXED: requires BOTH yes/no AND score
+  const allAnswered = useMemo(
+    () => answers.every(a => a.yesNo !== null || a.score !== null),
+    [answers]
+  );
 
-  function openScore(index) {
+  const setYesNo = (index, value) => {
+    const updated = [...answers];
+    updated[index].yesNo = value;
+    setAnswers(updated);
+  };
+
+  const openScore = (index) => {
     setActiveQ(index);
     setTempScore(answers[index].score ?? 5);
     setModalVisible(true);
-  }
+  };
 
-  function saveScore() {
-    const copy = [...answers];
-    copy[activeQ] = { ...copy[activeQ], score: tempScore };
-    setAnswers(copy);
+  const saveScore = () => {
+    const updated = [...answers];
+    updated[activeQ].score = tempScore;
+    setAnswers(updated);
     setModalVisible(false);
-  }
+  };
 
-  const allAnswered = answers.every((a) => a.yesNo !== null || a.score !== null);
+  const handleSubmit = async () => {
+    if (!allAnswered) {
+      Alert.alert("Error", "Please answer all questions and assign scores");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const token = await AsyncStorage.getItem("token");
+
+      // ❗ Backend expects { answer: "yes", score: 8 }
+      const formattedAnswers = answers.map(a => ({
+        answer: a.yesNo,
+        score: a.score,
+      }));
+
+      const response = await fetch(
+        "https://backendpmajay.onrender.com/api/surveys/submit-v2",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ houseId, answers: formattedAnswers }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("Household Submit API Response:", data);
+
+      if (!data.success) {
+        Alert.alert("Error", data.message || "Failed to submit survey");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // BACKEND RETURNS survey._id
+      const surveyId = data.survey?._id;
+
+      if (!surveyId) {
+        Alert.alert("Error", "Survey ID missing from backend response.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      Alert.alert("Success", "Household survey submitted successfully");
+
+      // ✅ FIXED: must pass surveyId to next screen
+      navigation.navigate("InfrastructureSurvey", { surveyId: data.survey._id });
+
+
+      setIsSubmitting(false);
+    } catch (err) {
+      console.log("Submit household error:", err);
+      Alert.alert("Error", "Network / server error");
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text style={styles.title}>Household Survey</Text>
-        {QUESTIONS.map((q, i) => (
-          <View key={i} style={styles.card}>
-            <Text style={styles.qIndex}>Q{i + 1}</Text>
-            <Text style={styles.qText}>{q}</Text>
+    <ScrollView contentContainerStyle={{ padding: 16, backgroundColor: "#F7FAFF" }}>
+      <Text style={styles.title}>Household Survey</Text>
 
-            <View style={styles.optionsRow}>
-              <TouchableOpacity
-                style={[styles.optionButton, answers[i].yesNo === "yes" && styles.optionSelected]}
-                onPress={() => !isSubmitted && setYesNo(i, "yes")}
-                disabled={isSubmitted}
-              >
-                <Text style={[styles.optionText, answers[i].yesNo === "yes" && styles.optionTextSelected]}>
-                  YES
-                </Text>
-              </TouchableOpacity>
+      {QUESTIONS.map((q, i) => (
+        <View key={i} style={styles.card}>
+          <Text style={styles.qIndex}>Q{i + 1}</Text>
+          <Text style={styles.qText}>{q}</Text>
 
-              <TouchableOpacity
-                style={[styles.optionButton, answers[i].yesNo === "no" && styles.optionSelected]}
-                onPress={() => !isSubmitted && setYesNo(i, "no")}
-                disabled={isSubmitted}
-              >
-                <Text style={[styles.optionText, answers[i].yesNo === "no" && styles.optionTextSelected]}>
-                  NO
-                </Text>
-              </TouchableOpacity>
+          <View style={styles.optionsRow}>
+            <TouchableOpacity
+              style={[styles.optionButton, answers[i].yesNo === "yes" && styles.optionSelected]}
+              onPress={() => setYesNo(i, "yes")}
+            >
+              <Text style={[styles.optionText, answers[i].yesNo === "yes" && styles.optionTextSelected]}>YES</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.scoreButton}
-                onPress={() => !isSubmitted && openScore(i)}
-                disabled={isSubmitted}
-              >
-                <Text style={styles.scoreButtonText}>
-                  {answers[i].score ? `Score: ${answers[i].score}` : "Score (1-10)"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.optionButton, answers[i].yesNo === "no" && styles.optionSelected]}
+              onPress={() => setYesNo(i, "no")}
+            >
+              <Text style={[styles.optionText, answers[i].yesNo === "no" && styles.optionTextSelected]}>NO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.scoreButton} onPress={() => openScore(i)}>
+              <Text style={styles.scoreButtonText}>
+                {answers[i].score !== null ? `Score: ${answers[i].score}` : "Score (1-10)"}
+              </Text>
+            </TouchableOpacity>
           </View>
-        ))}
+        </View>
+      ))}
 
-        <TouchableOpacity
-  style={[styles.submitButton, !allAnswered && { backgroundColor: "#A9C6F2" }]}
-  onPress={() => {
-    setIsSubmitted(true);
-    navigation.navigate("SurveyType");
-  }}
-  disabled={!allAnswered}
->
-  <Text style={styles.submitButtonText}>Complete Household Survey</Text>
-</TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.submitButton, (!allAnswered || isSubmitting) && { backgroundColor: "#A9C6F2" }]}
+        disabled={!allAnswered || isSubmitting}
+        onPress={handleSubmit}
+      >
+        <Text style={styles.submitButtonText}>
+          {isSubmitting ? "Submitting..." : "Complete Household Survey"}
+        </Text>
+      </TouchableOpacity>
 
-      </ScrollView>
-
+      {/* Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 8 }}>Select score (1-10)</Text>
+            <Text style={{ fontSize: 16, fontWeight: "700" }}>Select score (1-10)</Text>
+
             <Slider
-              style={{ width: "100%", height: 40 }}
               minimumValue={1}
               maximumValue={10}
-              step={1}
               value={tempScore}
-              onValueChange={(v) => setTempScore(v)}
+              step={1}
+              onValueChange={setTempScore}
+              style={{ width: "100%", marginVertical: 10 }}
             />
-            <Text style={{ textAlign: "center", fontSize: 20, marginVertical: 6 }}>{tempScore}</Text>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalAction}>
-                <Text style={{ color: "#556575" }}>Cancel</Text>
+
+            <Text style={{ fontSize: 20, textAlign: "center" }}>{tempScore}</Text>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelBtn}>
+                <Text>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={saveScore} style={[styles.modalAction, { backgroundColor: "#0B62CC" }]}>
+
+              <TouchableOpacity onPress={saveScore} style={styles.saveBtn}>
                 <Text style={{ color: "#fff" }}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
-
-// (Styles unchanged)
+// Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F7FAFF" },
-  title: { fontSize: 20, fontWeight: "700", color: "#0B3D91", marginBottom: 12, paddingLeft: 4 },
-  card: { backgroundColor: "#fff", borderRadius: 10, padding: 12, marginBottom: 12, borderColor: "#E6EEF9", borderWidth: 1 },
+  title: { fontSize: 20, fontWeight: "700", color: "#0B3D91", marginBottom: 12 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderColor: "#E6EEF9",
+    borderWidth: 1,
+  },
   qIndex: { fontSize: 12, color: "#0B62CC", fontWeight: "700", marginBottom: 6 },
   qText: { fontSize: 15, color: "#233444", marginBottom: 8 },
   optionsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  optionButton: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, borderColor: "#DCEBF9", borderWidth: 1, backgroundColor: "#fff", minWidth: 80, alignItems: "center" },
+  optionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderColor: "#DCEBF9",
+    borderWidth: 1,
+    backgroundColor: "#fff",
+    minWidth: 80,
+    alignItems: "center",
+  },
   optionSelected: { backgroundColor: "#E6F0FF", borderColor: "#0B62CC" },
   optionText: { color: "#425569", fontWeight: "600" },
   optionTextSelected: { color: "#0B62CC" },
-  scoreButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderColor: "#E6EEF9", borderWidth: 1, backgroundColor: "#fff" },
+  scoreButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderColor: "#E6EEF9",
+    borderWidth: 1,
+    backgroundColor: "#fff",
+  },
   scoreButtonText: { color: "#425569", fontWeight: "600" },
-  submitButton: { backgroundColor: "#0B62CC", padding: 14, borderRadius: 10, alignItems: "center", margin: 16 },
+  submitButton: {
+    backgroundColor: "#0B62CC",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    margin: 16,
+  },
   submitButtonText: { color: "#fff", fontWeight: "700" },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(20,30,40,0.45)", justifyContent: "center", alignItems: "center", padding: 20 },
   modalCard: { width: "100%", maxWidth: 420, backgroundColor: "#fff", borderRadius: 10, padding: 18 },

@@ -21,6 +21,11 @@ import InfrastructureSurveyScreen from './Screens/InfrastructureSurveyScreen';
 import ViewHousesScreen from './Screens/ViewHouseScreen';
 import DomainListScreen from './Screens/DomainListScreen';
 import DomainDetailsScreen from './Screens/DomainDetailScreen';
+// ⭐ NEW SCREENS (ADD THESE IMPORTS)
+import ProjectsScreen from './Screens/ProjectScreen';
+import ProjectDetailScreen from './Screens/ProjectDetailScreen';
+import MapScreen from './Screens/MapScreen';
+
 
 
 const Stack = createNativeStackNavigator();
@@ -60,6 +65,10 @@ export default function App() {
           component={DomainDetailsScreen}
           options={{ title: 'Domain Details' }}
         />
+         {/* ⭐ NEW ROUTES ADDED BELOW */}
+        <Stack.Screen name="Projects" component={ProjectsScreen} options={{ title: 'Ongoing Projects' }} />
+        <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} options={{ title: 'Project Details' }} />
+        <Stack.Screen name="MapScreen" component={MapScreen} options={{ title: 'Map View' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

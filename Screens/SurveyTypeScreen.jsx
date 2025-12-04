@@ -1,8 +1,9 @@
-// SurveyTypeScreen.jsx
 import React from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
 
-export default function SurveyTypeScreen({ navigation }) {
+export default function SurveyTypeScreen({ navigation, route }) {
+  const { houseId } = route.params; // MUST receive houseId
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -11,11 +12,17 @@ export default function SurveyTypeScreen({ navigation }) {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.buttonPrimary} onPress={() => navigation.navigate('HouseholdSurvey')}>
+        <TouchableOpacity
+          style={styles.buttonPrimary}
+          onPress={() => navigation.navigate("HouseholdSurvey", { houseId })}
+        >
           <Text style={styles.buttonPrimaryText}>Household Survey</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.buttonOutline} onPress={() => navigation.navigate('InfrastructureSurvey')}>
+        <TouchableOpacity
+          style={styles.buttonOutline}
+          onPress={() => navigation.navigate("InfrastructureSurvey", { houseId })}
+        >
           <Text style={styles.buttonOutlineText}>Infrastructure Survey</Text>
         </TouchableOpacity>
 
@@ -33,12 +40,24 @@ export default function SurveyTypeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F7FAFF" },
   header: { padding: 20 },
-  title: { fontSize: 22, color: "#0B3D91", fontWeight: "700" },
+  title: { fontSize: 22, fontWeight: "700", color: "#0B3D91" },
   subtitle: { color: "#667B8A", marginTop: 6 },
   actions: { padding: 20 },
-  buttonPrimary: { backgroundColor: "#0B62CC", padding: 14, borderRadius: 10, marginBottom: 12, alignItems: "center" },
+  buttonPrimary: {
+    backgroundColor: "#0B62CC",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+    alignItems: "center",
+  },
   buttonPrimaryText: { color: "#fff", fontWeight: "700" },
-  buttonOutline: { borderWidth: 1, borderColor: "#0B62CC", padding: 14, borderRadius: 10, alignItems: "center" },
+  buttonOutline: {
+    borderWidth: 1,
+    borderColor: "#0B62CC",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
   buttonOutlineText: { color: "#0B62CC", fontWeight: "700" },
   noteCard: {
     marginTop: 18,

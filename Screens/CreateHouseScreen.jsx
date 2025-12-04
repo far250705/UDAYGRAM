@@ -1,43 +1,105 @@
-// CreateHouseScreen.jsx
 import React, { useState } from "react";
-import { SafeAreaView, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CreateHouseScreen({ navigation }) {
-  // assume village/district prefilled from registration (mocked here)
   const [houseNo, setHouseNo] = useState("");
   const [address, setAddress] = useState("");
-  const [village, setVillage] = useState("Mockpur");
-  const [district, setDistrict] = useState("Mockdistrict");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCreateHouse = async () => {
+    if (!houseNo.trim()) {
+      Alert.alert("Error", "House Number is required");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        Alert.alert("Error", "Not logged in. Please login again.");
+        navigation.navigate("Login");
+        return;
+      }
+
+      const response = await fetch(
+        "https://backendpmajay.onrender.com/api/surveys/create-house",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            houseNumber: houseNo,
+            address: address,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      if (!data.success) {
+        Alert.alert("Error", data.message || "Failed to create house");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Navigate to SurveyTypeScreen with houseId
+      navigation.navigate("SurveyType", { houseId: data.house._id });
+      setIsSubmitting(false);
+    } catch (err) {
+      console.log(err);
+      Alert.alert("Error", "Network/Server error");
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <Text style={styles.title}>Create House</Text>
+    <ScrollView contentContainerStyle={{ padding: 20, backgroundColor: "#F7FAFF" }}>
+      <Text style={styles.title}>Create House</Text>
 
-        <Text style={styles.label}>House Number</Text>
-        <TextInput style={styles.input} value={houseNo} onChangeText={setHouseNo} placeholder="e.g., H-102" />
+      <Text style={styles.label}>House Number</Text>
+      <TextInput
+        style={styles.input}
+        value={houseNo}
+        onChangeText={setHouseNo}
+        placeholder="e.g., H-102"
+      />
 
-        <Text style={styles.label}>Address</Text>
-        <TextInput style={styles.input} value={address} onChangeText={setAddress} placeholder="Street / Landmark" />
+      <Text style={styles.label}>Address</Text>
+      <TextInput
+        style={styles.input}
+        value={address}
+        onChangeText={setAddress}
+        placeholder="Street / Landmark"
+      />
 
-        <Text style={styles.label}>Village Name</Text>
-        <TextInput style={styles.input} value={village} onChangeText={setVillage} placeholder="Village" />
-
-        <Text style={styles.label}>District Name</Text>
-        <TextInput style={styles.input} value={district} onChangeText={setDistrict} placeholder="District" />
-
-        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('SurveyType')}>
-          <Text style={styles.primaryButtonText}>Proceed to Survey</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      <TouchableOpacity
+        style={[styles.button, isSubmitting && { backgroundColor: "#A9C6F2" }]}
+        onPress={handleCreateHouse}
+        disabled={isSubmitting}
+      >
+        <Text style={styles.buttonText}>
+          {isSubmitting ? "Creating..." : "Create & Continue"}
+        </Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7FAFF" },
   title: { fontSize: 20, fontWeight: "700", color: "#0B3D91", marginBottom: 16 },
-  label: { fontSize: 13, color: "#425569", marginBottom: 6 },
+  label: { fontSize: 14, color: "#425569", marginBottom: 6 },
   input: {
     backgroundColor: "#fff",
     padding: 12,
@@ -46,6 +108,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-  primaryButton: { backgroundColor: "#0B62CC", padding: 14, borderRadius: 8, alignItems: "center", marginTop: 10 },
-  primaryButtonText: { color: "#fff", fontWeight: "600" },
+  button: {
+    backgroundColor: "#0B62CC",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  buttonText: { color: "#fff", fontWeight: "700" },
 });

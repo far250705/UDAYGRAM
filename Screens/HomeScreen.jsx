@@ -35,6 +35,17 @@ export default function HomeScreen({ navigation, route }) {
           <Text style={styles.viewHousesText}>View Houses</Text>
         </TouchableOpacity>
       </View>
+      {/* Bottom Navbar */}
+<View style={styles.bottomNav}>
+  <TouchableOpacity onPress={() => navigation.navigate("Projects")}>
+    <Text style={styles.navItem}>Projects</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity onPress={() => navigation.navigate("MapScreen")}>
+    <Text style={styles.navItem}>Map</Text>
+  </TouchableOpacity>
+</View>
+
     </SafeAreaView>
   );
 }
@@ -54,5 +65,31 @@ const styles = StyleSheet.create({
   largeButtonOutline: { borderWidth: 1, borderColor: "#0B62CC", padding: 16, borderRadius: 10, alignItems: "center", marginBottom: 12, backgroundColor: "#fff" },
   largeButtonOutlineText: { color: "#0B62CC", fontWeight: "700" },
   viewHouses: { marginTop: 10, alignItems: "center" },
-  viewHousesText: { color: "#556575", textDecorationLine: "underline" },
+  viewHousesText: { color: "#556575", textDecorationLine: "underline"},
+  content: {
+  padding: 20,
+  content: { padding: 20 },
+ // prevents overlap with bottom nav
+},
+
+bottomNav: {
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: 60,
+  backgroundColor: "#fff",
+  borderTopWidth: 1,
+  borderColor: "#ccc",
+  flexDirection: "row",
+  justifyContent: "space-around",
+  alignItems: "center",
+},
+
+navItem: {
+  fontSize: 16,
+  color: "#0B62CC",
+  fontWeight: "600",
+},
+
 });
