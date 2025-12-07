@@ -55,7 +55,7 @@ export default function CreateHouseScreen({ navigation }) {
       }
 
       // Navigate to SurveyTypeScreen with houseId
-      navigation.navigate("SurveyType", { houseId: data.house._id });
+      navigation.navigate("UnifiedSurvey", { houseId: data.house._id });
       setIsSubmitting(false);
     } catch (err) {
       console.log(err);

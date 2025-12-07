@@ -25,7 +25,8 @@ import DomainDetailsScreen from './Screens/DomainDetailScreen';
 import ProjectsScreen from './Screens/ProjectScreen';
 import ProjectDetailScreen from './Screens/ProjectDetailScreen';
 import MapScreen from './Screens/MapScreen';
-
+import UnifiedSurveyScreen from './Screens/UnifiedSurveyScreen';
+import HouseDetailsScreen from './Screens/HouseDetailsScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -66,6 +67,8 @@ export default function App() {
           options={{ title: 'Domain Details' }}
         />
          {/* ⭐ NEW ROUTES ADDED BELOW */}
+         <Stack.Screen name="UnifiedSurvey" component={UnifiedSurveyScreen} />
+<Stack.Screen name="HouseDetails" component={HouseDetailsScreen} />
         <Stack.Screen name="Projects" component={ProjectsScreen} options={{ title: 'Ongoing Projects' }} />
         <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} options={{ title: 'Project Details' }} />
         <Stack.Screen name="MapScreen" component={MapScreen} options={{ title: 'Map View' }} />

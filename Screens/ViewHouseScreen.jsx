@@ -1,54 +1,133 @@
-// ViewHousesScreen.jsx
-import React from "react";
-import { SafeAreaView, View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-
-const MOCK_HOUSES = [
-  { id: "H001", houseNo: "H-101", address: "Near Temple Road", village: "Mockpur", district: "Mockdistrict" },
-  { id: "H002", houseNo: "H-102", address: "Station Lane", village: "Mockpur", district: "Mockdistrict" },
-  { id: "H003", houseNo: "H-103", address: "Market Street", village: "Mockpur", district: "Mockdistrict" },
-];
+import React, { useEffect, useState } from "react";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ViewHousesScreen({ navigation }) {
+  const [houses, setHouses] = useState([]);
+
+  useEffect(() => {
+    fetchHouses();
+  }, []);
+
+  const fetchHouses = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      const res = await fetch(
+        "https://backendpmajay.onrender.com/api/surveys/houses",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        setHouses(data.houses);
+      }
+    } catch (err) {
+      console.log("Fetch Houses Error:", err);
+    }
+  };
+
+  const renderHouse = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <View>
+          <Text style={styles.houseNo}>{item.houseNumber}</Text>
+          <Text style={styles.addr}>{item.address || "No address"}</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.viewBtn}
+          onPress={() =>
+            navigation.navigate("HouseDetails", {
+              houseId: item._id,
+              surveyStatus: item.surveyStatus,
+            })
+          }
+        >
+          <Text style={styles.viewBtnText}>View</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Houses</Text>
 
       <FlatList
-        data={MOCK_HOUSES}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={{ padding: 16 }}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={styles.houseNo}>{item.houseNo}</Text>
-              <TouchableOpacity style={styles.viewBtn} onPress={() => navigation.navigate('HouseDetails', { houseId: item.id })}>
-                <Text style={styles.viewBtnText}>View</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.addr}>{item.address}</Text>
-            <Text style={styles.meta}>{item.village} • {item.district}</Text>
-          </View>
-        )}
+        data={houses}
+        keyExtractor={(i) => i._id}
+        renderItem={renderHouse}
+        contentContainerStyle={{ paddingBottom: 20 }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7FAFF" },
-  title: { fontSize: 22, fontWeight: "700", color: "#0B3D91", padding: 16 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 12,
-    borderColor: "#E6EEF9",
-    borderWidth: 1,
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#F3F4F6",
   },
-  houseNo: { fontWeight: "700", color: "#0B62CC", fontSize: 16 },
-  addr: { color: "#425569", marginTop: 6 },
-  meta: { color: "#667B8A", marginTop: 6, fontSize: 13 },
-  viewBtn: { backgroundColor: "#E6F0FF", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  viewBtnText: { color: "#0B62CC", fontWeight: "700" },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 15,
+    color: "#1F2937",
+  },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    padding: 18,
+    marginBottom: 14,
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  houseNo: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  addr: {
+    marginTop: 4,
+    fontSize: 15,
+    color: "#6B7280",
+  },
+
+  viewBtn: {
+    backgroundColor: "#2563EB",
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+  },
+
+  viewBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
 });
