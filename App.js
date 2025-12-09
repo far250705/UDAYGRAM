@@ -45,9 +45,9 @@ export default function App() {
       >
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Register' }} />
-        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'UDAY GRAM' }} />
-        <Stack.Screen name="CreateHouse" component={CreateHouseScreen} options={{ title: 'Create House' }} />
-        <Stack.Screen name="SurveyType" component={SurveyTypeScreen} options={{ title: 'Select Survey' }} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="CreateHouse" component={CreateHouseScreen} options={{ headerShown: false } } />
+        <Stack.Screen name="SurveyType" component={SurveyTypeScreen} options={{ headerShown: false }} />
         <Stack.Screen
           name="HouseholdSurvey"
           component={HouseholdSurveyScreen}
@@ -58,7 +58,7 @@ export default function App() {
           component={InfrastructureSurveyScreen}
           options={{ title: 'Infrastructure Survey' }}
         />
-        <Stack.Screen name="ViewHouses" component={ViewHousesScreen} options={{ title: 'Houses' }} />
+        <Stack.Screen name="ViewHouses" component={ViewHousesScreen} options={{ headerShown: false }} />
         <Stack.Screen name="DomainList" component={DomainListScreen} />
 
         <Stack.Screen
@@ -67,7 +67,7 @@ export default function App() {
           options={{ title: 'Domain Details' }}
         />
          {/* ⭐ NEW ROUTES ADDED BELOW */}
-         <Stack.Screen name="UnifiedSurvey" component={UnifiedSurveyScreen} />
+         <Stack.Screen name="UnifiedSurvey" component={UnifiedSurveyScreen} options={{ headerShown: false }}/>
 <Stack.Screen name="HouseDetails" component={HouseDetailsScreen} />
         <Stack.Screen name="Projects" component={ProjectsScreen} options={{ title: 'Ongoing Projects' }} />
         <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} options={{ title: 'Project Details' }} />
